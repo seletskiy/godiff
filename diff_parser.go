@@ -21,13 +21,26 @@ const (
 )
 
 var (
-	reFromFile      = regexp.MustCompile(`^--- ([^ ]+)\t(.*)`)
-	reToFile        = regexp.MustCompile(`^\+\+\+ ([^ ]+)\t(.*)`)
-	reHunk          = regexp.MustCompile(`^@@ -(\d+),(\d+) \+(\d+),(\d+) @@`)
-	reCommentDelim  = regexp.MustCompile(`^#\s+---`)
-	reCommentHeader = regexp.MustCompile(`^#\s+\[(\d+)\]\s+\|([^|]+)\|(.*)`)
-	reCommentText   = regexp.MustCompile(`^#\s*(.*)`)
-	reIndent        = regexp.MustCompile(`^#(\s+)`)
+	reFromFile = regexp.MustCompile(
+		`^--- ([^ ]+)\t(.*)`)
+
+	reToFile = regexp.MustCompile(
+		`^\+\+\+ ([^ ]+)\t(.*)`)
+
+	reHunk = regexp.MustCompile(
+		`^@@ -(\d+),(\d+) \+(\d+),(\d+) @@`)
+
+	reCommentDelim = regexp.MustCompile(
+		`^#\s+---`)
+
+	reCommentHeader = regexp.MustCompile(
+		`^#\s+\[(\d+)@(\d+)\]\s+\|([^|]+)\|(.*)`)
+
+	reCommentText = regexp.MustCompile(
+		`^#\s*(.*)`)
+
+	reIndent = regexp.MustCompile(
+		`^#(\s+)`)
 )
 
 type parser struct {
@@ -271,12 +284,15 @@ func (current *parser) parseHunkBody(line string) error {
 
 func (current *parser) parseCommentHeader(line string) error {
 	matches := reCommentHeader.FindStringSubmatch(line)
-	current.comment.Author.DisplayName = strings.TrimSpace(matches[2])
+	current.comment.Author.DisplayName = strings.TrimSpace(matches[3])
 	current.comment.Id, _ = strconv.ParseInt(matches[1], 10, 16)
 	updatedDate, _ := time.ParseInLocation(time.ANSIC,
-		strings.TrimSpace(matches[3]),
+		strings.TrimSpace(matches[4]),
 		time.Local)
 	current.comment.UpdatedDate = UnixTimestamp(updatedDate.Unix() * 1000)
+
+	version, _ := strconv.ParseInt(matches[2], 10, 16)
+	current.comment.Version = int(version)
 
 	return nil
 }

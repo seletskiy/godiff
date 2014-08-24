@@ -59,7 +59,7 @@ const replyIndent = "    "
 
 var commentTpl = template.Must(template.New("comment").Parse(
 	"\n\n" +
-		"[{{.Id}}] | {{.Author.DisplayName}} | {{.UpdatedDate}}\n" +
+		"[{{.Id}}@{{.Version}}] | {{.Author.DisplayName}} | {{.UpdatedDate}}\n" +
 		"\n" +
 		"{{.Text}}\n" +
 		"\n---"))
