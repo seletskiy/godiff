@@ -44,9 +44,24 @@ func TestNewCommentForLine(t *testing.T) {
 		{"_test/new_comment_to_add.diff",
 			CommentAnchor{
 				Line: 3, LineType: SegmentTypeAdded, Path: "/tmp/b"}},
-		//{"_test/new_comment_to_del.diff", 3, SegmentTypeRemoved},
-		//{"_test/new_comment_to_ctx_with_add.diff", 3, SegmentTypeContext},
-		//{"_test/new_comment_to_ctx_with_add_del.diff", 5, SegmentTypeContext},
+		{"_test/new_comment_to_del.diff",
+			CommentAnchor{
+				Line:     3,
+				LineType: SegmentTypeRemoved,
+				Path:     "/tmp/a",
+			}},
+		{"_test/new_comment_to_ctx_with_add.diff",
+			CommentAnchor{
+				Line:     3,
+				LineType: SegmentTypeContext,
+				Path:     "/tmp/a",
+			}},
+		{"_test/new_comment_to_ctx_with_add_del.diff",
+			CommentAnchor{
+				Line:     5,
+				LineType: SegmentTypeContext,
+				Path:     "/tmp/a",
+			}},
 	}
 
 	for _, test := range tests {
