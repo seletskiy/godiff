@@ -11,6 +11,15 @@ type Changeset struct {
 	Path       string
 	Whitespace string
 	Diffs      []*Diff
+	Errors     []OperationError
+}
+
+type OperationError struct {
+	Message string
+}
+
+func (o OperationError) Error() string {
+	return o.Message
 }
 
 var changesetTpl = template.Must(template.New("file").Parse(
