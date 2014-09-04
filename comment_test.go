@@ -18,7 +18,7 @@ func TestShortComment(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		actual := test.comment.Short(commentShortLength)
+		actual := test.comment.Short(20)
 		if actual != test.short {
 			t.Fatalf("unexpected %#v", actual)
 		}

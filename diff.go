@@ -1,10 +1,5 @@
 package godiff
 
-import (
-	"bytes"
-	"text/template"
-)
-
 type Diff struct {
 	Truncated bool
 	Source    struct {
@@ -19,14 +14,32 @@ type Diff struct {
 	}
 	Hunks        []*Hunk
 	LineComments []*Comment
+
+	// Lists made only for Stash API compatibility.
+	Attributes struct {
+		FromHash []string
+		ToHash   []string
+	}
 }
 
-var diffTpl = template.Must(template.New("diff").Parse(
-	"{{range .Hunks}}{{.}}{{end}}"))
+var diffTpl = loadSparseTemplate(`diff`, `
+--- {{.Source.ToString}}{{"\t"}}{{index .Attributes.FromHash 0}}{{"\n"}}
++++ {{.Destination.ToString}}{{"\t"}}{{index .Attributes.ToHash 0}}{{"\n"}}
+{{range .Hunks}}
+	{{.}}
+{{end}}
+`)
 
 func (d Diff) String() string {
-	buf := bytes.NewBuffer([]byte{})
-	diffTpl.Execute(buf, d)
+	return diffTpl.Execute(d)
+}
 
-	return buf.String()
+func (d Diff) ForEachLine(callback func(*Diff, *Hunk, *Segment, *Line)) {
+	for _, hunk := range d.Hunks {
+		for _, segment := range hunk.Segments {
+			for _, line := range segment.Lines {
+				callback(&d, hunk, segment, line)
+			}
+		}
+	}
 }

@@ -30,3 +30,16 @@ func (s Segment) String() string {
 
 	return result
 }
+
+func (s Segment) GetLineNum(l *Line) int64 {
+	switch s.Type {
+	case SegmentTypeContext:
+		fallthrough
+	case SegmentTypeRemoved:
+		return l.Source
+	case SegmentTypeAdded:
+		return l.Destination
+	}
+
+	return 0
+}

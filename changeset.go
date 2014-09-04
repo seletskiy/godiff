@@ -1,15 +1,11 @@
 package godiff
 
-import (
-	"bytes"
-	"text/template"
-)
-
 type Changeset struct {
 	FromHash   string
 	ToHash     string
 	Path       string
 	Whitespace string
+	Comments   CommentsTree
 	Diffs      []*Diff
 	Errors     []OperationError
 }
@@ -22,21 +18,17 @@ func (o OperationError) Error() string {
 	return o.Message
 }
 
-var changesetTpl = template.Must(template.New("file").Parse(
-	"{{with $parent := .}}" +
-		"{{range .Diffs}}" +
-		"--- {{$parent.Path}}\t{{$parent.FromHash}}\n" +
-		"+++ {{$parent.Path}}\t{{$parent.ToHash}}\n" +
-		"{{.}}" +
-		"{{else}}" +
-		"{{end}}" +
-		"{{end}}"))
+var changesetTpl = loadSparseTemplate("changeset", `
+{{if .Comments}}
+	{{.Comments}}
+	{{"\n"}}
+{{end}}
+
+{{range .Diffs}}{{.}}{{end}}
+`)
 
 func (r Changeset) String() string {
-	buf := bytes.NewBuffer([]byte{})
-	changesetTpl.Execute(buf, r)
-
-	return buf.String()
+	return changesetTpl.Execute(r)
 }
 
 func (r Changeset) ForEachComment(callback func(*Diff, *Comment, *Comment)) {
@@ -63,14 +55,8 @@ func (r Changeset) ForEachComment(callback func(*Diff, *Comment, *Comment)) {
 	}
 }
 
-func (r Changeset) ForEachLine(callback func(*Diff, *Line)) {
+func (r Changeset) ForEachLine(callback func(*Diff, *Hunk, *Segment, *Line)) {
 	for _, diff := range r.Diffs {
-		for _, hunk := range diff.Hunks {
-			for _, segment := range hunk.Segments {
-				for _, line := range segment.Lines {
-					callback(diff, line)
-				}
-			}
-		}
+		diff.ForEachLine(callback)
 	}
 }

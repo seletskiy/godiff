@@ -1,15 +1,9 @@
 package godiff
 
 import (
-	"bytes"
 	"regexp"
-	"text/template"
 	"time"
 )
-
-const commentShortLength = 20
-
-var reWhiteSpace = regexp.MustCompile(`\s+`)
 
 type UnixTimestamp int
 
@@ -23,7 +17,7 @@ type Comment struct {
 	Text        string
 	CreatedDate UnixTimestamp
 	UpdatedDate UnixTimestamp
-	Comments    []*Comment
+	Comments    CommentsTree
 	Author      struct {
 		Name         string
 		EmailAddress string
@@ -55,26 +49,41 @@ type CommentAnchor struct {
 	FileType string `json:"fileType"`
 }
 
+type CommentsTree []*Comment
+
+var commentTpl = loadSparseTemplate("comment", `
+{{if gt .Id 0}}
+	[{{.Id}}@{{.Version}}] | {{.Author.DisplayName}} | {{.UpdatedDate}}
+	{{"\n\n"}}
+{{end}}
+
+{{.Text}}
+{{"\n\n"}}
+---
+`)
+
 const replyIndent = "    "
 
-var commentTpl = template.Must(template.New("comment").Parse(
-	"\n\n" +
-		"[{{.Id}}@{{.Version}}] | {{.Author.DisplayName}} | {{.UpdatedDate}}\n" +
-		"\n" +
-		"{{.Text}}\n" +
-		"\n---"))
+var begOfLineRe = regexp.MustCompile("(?m)^")
 
 func (c Comment) String() string {
-	buf := bytes.NewBuffer([]byte{})
-	commentTpl.Execute(buf, c)
+	comments := commentTpl.Execute(c)
 
 	for _, reply := range c.Comments {
-		buf.WriteString(
-			begOfLineRe.ReplaceAllString(reply.String(), "\n"+replyIndent))
+		comments += reply.AsReply()
 	}
 
-	return buf.String()
+	return comments
 }
+
+func (c Comment) AsReply() string {
+	return begOfLineRe.ReplaceAllString(
+		commentSpacing+c.String(),
+		replyIndent,
+	)
+}
+
+var reWhiteSpace = regexp.MustCompile(`\s+`)
 
 func (c Comment) Short(length int) string {
 	sticked := []rune(reWhiteSpace.ReplaceAllString(c.Text, " "))
@@ -83,5 +92,41 @@ func (c Comment) Short(length int) string {
 		return string(sticked[:length]) + "..."
 	} else {
 		return string(sticked)
+	}
+}
+
+const ignorePrefix = "###"
+
+var reBeginningOfLine = regexp.MustCompile(`(?m)^`)
+var reIgnorePrefixSpace = regexp.MustCompile("(?m)^" + ignorePrefix + " $")
+
+func SolidComment(String string) string {
+	return reIgnorePrefixSpace.ReplaceAllString(
+		reBeginningOfLine.ReplaceAllString(String, ignorePrefix+" "),
+		ignorePrefix)
+}
+
+const commentSpacing = "\n\n"
+const commentPrefix = "# "
+
+func (comments CommentsTree) String() string {
+	res := ""
+
+	if len(comments) > 0 {
+		res = "---" + commentSpacing
+	}
+
+	for i, comment := range comments {
+		res += comment.String()
+		if i < len(comments)-1 {
+			res += commentSpacing
+		}
+	}
+
+	if len(comments) > 0 {
+		return danglingSpacesRe.ReplaceAllString(
+			begOfLineRe.ReplaceAllString(res, "# "), "")
+	} else {
+		return ""
 	}
 }

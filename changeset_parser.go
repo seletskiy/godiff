@@ -11,13 +11,16 @@ import (
 )
 
 const (
-	stateStartOfFile   = "stateStartOfFile"
-	stateDiffHeader    = "stateDiffHeader"
-	stateHunkHeader    = "stateHunkHeader"
-	stateHunkBody      = "stateHunkBody"
-	stateComment       = "stateComment"
-	stateCommentDelim  = "stateCommentDelim"
-	stateCommentHeader = "stateCommentHeader"
+	stateStartOfFile      = "stateStartOfFile"
+	stateDiffHeader       = "stateDiffHeader"
+	stateHunkHeader       = "stateHunkHeader"
+	stateHunkBody         = "stateHunkBody"
+	stateComment          = "stateComment"
+	stateCommentDelim     = "stateCommentDelim"
+	stateCommentHeader    = "stateCommentHeader"
+	stateTopComment       = "stateTopComment"
+	stateTopCommentDelim  = "stateTopCommentDelim"
+	stateTopCommentHeader = "stateTopCommentHeader"
 )
 
 var (
@@ -56,7 +59,7 @@ type parser struct {
 	commentsList []*Comment
 }
 
-func ParseDiff(r io.Reader) (Changeset, error) {
+func ParseChangeset(r io.Reader) (Changeset, error) {
 	buffer := bufio.NewReader(r)
 
 	current := parser{}
@@ -88,11 +91,20 @@ func (current *parser) switchState(line string) error {
 		switch line[0] {
 		case '-':
 			current.state = stateDiffHeader
+		case '#':
+			inComment = true
 		}
 	case stateDiffHeader:
 		switch line[0] {
 		case '@':
 			current.state = stateHunkHeader
+		}
+	case stateTopComment, stateTopCommentDelim, stateTopCommentHeader:
+		switch line[0] {
+		case '-':
+			current.state = stateDiffHeader
+		case '#':
+			inComment = true
 		}
 	case stateHunkHeader:
 		current.state = stateHunkBody
@@ -112,6 +124,27 @@ func (current *parser) switchState(line string) error {
 			current.state = stateHunkHeader
 		case '#':
 			inComment = true
+		}
+	}
+
+	if !inComment {
+		current.comment = nil
+	} else {
+		switch current.state {
+		case stateStartOfFile:
+			fallthrough
+		case stateTopComment, stateTopCommentDelim, stateTopCommentHeader:
+			switch {
+			case reCommentDelim.MatchString(line):
+				current.state = stateTopCommentDelim
+			case reCommentHeader.MatchString(line):
+				current.state = stateTopCommentHeader
+			case reCommentText.MatchString(line):
+				current.state = stateTopComment
+			}
+		case stateHunkBody:
+			fallthrough
+		case stateComment, stateCommentDelim, stateCommentHeader:
 			switch {
 			case reCommentDelim.MatchString(line):
 				current.state = stateCommentDelim
@@ -123,10 +156,6 @@ func (current *parser) switchState(line string) error {
 		}
 	}
 
-	if !inComment {
-		current.comment = nil
-	}
-
 	return nil
 }
 
@@ -136,17 +165,18 @@ func (current *parser) createNodes(line string) error {
 		switch line[0] {
 		case '-':
 			current.diff = &Diff{}
-			current.changeset.Diffs = append(current.changeset.Diffs, current.diff)
+			current.changeset.Diffs = append(current.changeset.Diffs,
+				current.diff)
 		case '@':
 			current.hunk = &Hunk{}
 			current.segment = &Segment{}
 		}
-	case stateCommentDelim:
-		current.comment = &Comment{}
-	case stateComment:
+	case stateCommentDelim, stateTopCommentDelim:
+		fallthrough
+	case stateComment, stateTopComment:
 		switch {
 		case reCommentDelim.MatchString(line):
-			// noop
+			current.comment = &Comment{}
 		case reCommentText.MatchString(line):
 			if current.comment == nil {
 				current.comment = &Comment{}
@@ -155,7 +185,8 @@ func (current *parser) createNodes(line string) error {
 	case stateHunkBody:
 		if current.segment.Type != current.segmentType {
 			current.segment = &Segment{Type: current.segmentType}
-			current.hunk.Segments = append(current.hunk.Segments, current.segment)
+			current.hunk.Segments = append(current.hunk.Segments,
+				current.segment)
 		}
 
 		current.line = &Line{}
@@ -167,7 +198,7 @@ func (current *parser) createNodes(line string) error {
 
 func (current *parser) locateNodes(line string) error {
 	switch current.state {
-	case stateComment:
+	case stateComment, stateTopComment:
 		current.locateComment(line)
 	case stateHunkBody:
 		current.locateLine(line)
@@ -182,26 +213,30 @@ func (current *parser) locateComment(line string) error {
 	}
 
 	current.commentsList = append(current.commentsList, current.comment)
-
-	current.comment.Anchor.LineType = current.segment.Type
-	switch current.segment.Type {
-	case SegmentTypeContext:
-		fallthrough
-	case SegmentTypeRemoved:
-		current.comment.Anchor.Line = current.line.Source
-	case SegmentTypeAdded:
-		current.comment.Anchor.Line = current.line.Destination
-	}
-	current.comment.Anchor.Path = current.diff.Destination.ToString
-	current.comment.Anchor.SrcPath = current.diff.Source.ToString
-	current.comment.Indent = getIndentSize(line)
 	current.comment.Parented = true
+
+	if current.diff != nil {
+		current.comment.Anchor.LineType = current.segment.Type
+		current.comment.Anchor.Line = current.segment.GetLineNum(current.line)
+		current.comment.Anchor.Path = current.diff.Destination.ToString
+		current.comment.Anchor.SrcPath = current.diff.Source.ToString
+	}
+
+	current.comment.Indent = getIndentSize(line)
+
 	parent := current.findParentComment(current.comment)
 	if parent != nil {
 		parent.Comments = append(parent.Comments, current.comment)
 	} else {
-		current.line.Comments = append(current.line.Comments, current.comment)
-		current.diff.LineComments = append(current.diff.LineComments, current.comment)
+		if current.line != nil {
+			current.diff.LineComments = append(current.diff.LineComments,
+				current.comment)
+			current.line.Comments = append(current.line.Comments,
+				current.comment)
+		} else {
+			current.changeset.Comments = append(current.changeset.Comments,
+				current.comment)
+		}
 	}
 
 	return nil
@@ -240,9 +275,9 @@ func (current *parser) parseLine(line string) error {
 		current.parseHunkHeader(line)
 	case stateHunkBody:
 		current.parseHunkBody(line)
-	case stateComment:
+	case stateComment, stateTopComment:
 		current.parseComment(line)
-	case stateCommentHeader:
+	case stateCommentHeader, stateTopCommentHeader:
 		current.parseCommentHeader(line)
 	}
 
@@ -256,10 +291,12 @@ func (current *parser) parseDiffHeader(line string) error {
 		current.changeset.Path = matches[1]
 		current.diff.Source.ToString = matches[1]
 		current.changeset.FromHash = matches[2]
+		current.diff.Attributes.FromHash = []string{matches[2]}
 	case reToFile.MatchString(line):
 		matches := reToFile.FindStringSubmatch(line)
 		current.diff.Destination.ToString = matches[1]
 		current.changeset.ToHash = matches[2]
+		current.diff.Attributes.ToHash = []string{matches[2]}
 	default:
 		return errors.New("expected diff header, but not found")
 	}

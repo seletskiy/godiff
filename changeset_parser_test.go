@@ -16,11 +16,11 @@ type diffTest struct {
 	err []byte
 }
 
-func TestParseDiff(t *testing.T) {
+func TestParseChangeset(t *testing.T) {
 	for name, testCase := range getParseTests("_test") {
 		expected := string(testCase.out)
 
-		review, err := ParseDiff(bytes.NewBuffer(testCase.in))
+		review, err := ParseChangeset(bytes.NewBuffer(testCase.in))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,7 +70,7 @@ func TestNewCommentForLine(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		review, err := ParseDiff(bytes.NewBuffer(reviewText))
+		review, err := ParseChangeset(bytes.NewBuffer(reviewText))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -105,7 +105,7 @@ func TestDoNotAddNestedCommentsToLineComments(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	review, err := ParseDiff(bytes.NewBuffer(reviewText))
+	review, err := ParseChangeset(bytes.NewBuffer(reviewText))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,14 +117,14 @@ func TestDoNotAddNestedCommentsToLineComments(t *testing.T) {
 
 func getParseTests(dir string) map[string]*diffTest {
 	diffTests := make(map[string]*diffTest)
-	reDiffTest := regexp.MustCompile(`/([^/]+)\.(in|out|err)\.diff$`)
+	reChangesetTest := regexp.MustCompile(`/([^/]+)\.(in|out|err)\.diff$`)
 
 	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
-		if !reDiffTest.MatchString(path) {
+		if !reChangesetTest.MatchString(path) {
 			return nil
 		}
 
-		matches := reDiffTest.FindStringSubmatch(path)
+		matches := reChangesetTest.FindStringSubmatch(path)
 
 		caseName := matches[1]
 

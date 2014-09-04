@@ -9,27 +9,20 @@ type Line struct {
 	Truncated      bool
 	ConflictMarker string
 	CommentIds     []int64
-	Comments       []*Comment
+	Comments       CommentsTree
 }
 
 var danglingSpacesRe = regexp.MustCompile("(?m) +$")
-var begOfLineRe = regexp.MustCompile("(?m)\n")
+
+var lineTpl = loadSparseTemplate("line", `
+{{.Line}}
+
+{{if .Comments}}
+	{{"\n"}}
+	{{.Comments}}
+{{end}}
+`)
 
 func (l Line) String() string {
-	res := ""
-
-	if len(l.Comments) > 0 {
-		res = "\n---"
-	}
-
-	for _, comment := range l.Comments {
-		res += comment.String()
-	}
-
-	if res != "" {
-		return l.Line + danglingSpacesRe.ReplaceAllString(
-			begOfLineRe.ReplaceAllString(res, "\n# "), "")
-	} else {
-		return l.Line
-	}
+	return lineTpl.Execute(l)
 }
