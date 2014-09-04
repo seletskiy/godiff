@@ -7,15 +7,6 @@ type Changeset struct {
 	Whitespace string
 	Comments   CommentsTree
 	Diffs      []*Diff
-	Errors     []OperationError
-}
-
-type OperationError struct {
-	Message string
-}
-
-func (o OperationError) Error() string {
-	return o.Message
 }
 
 var changesetTpl = loadSparseTemplate("changeset", `
