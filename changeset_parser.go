@@ -171,16 +171,13 @@ func (current *parser) createNodes(line string) error {
 			current.hunk = &Hunk{}
 			current.segment = &Segment{}
 		}
-	case stateCommentDelim, stateTopCommentDelim:
+	case stateCommentHeader, stateTopCommentHeader:
 		fallthrough
+	case stateCommentDelim, stateTopCommentDelim:
+		current.comment = &Comment{}
 	case stateComment, stateTopComment:
-		switch {
-		case reCommentDelim.MatchString(line):
+		if current.comment == nil {
 			current.comment = &Comment{}
-		case reCommentText.MatchString(line):
-			if current.comment == nil {
-				current.comment = &Comment{}
-			}
 		}
 	case stateHunkBody:
 		if current.segment.Type != current.segmentType {
