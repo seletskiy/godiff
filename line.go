@@ -14,15 +14,16 @@ type Line struct {
 
 var danglingSpacesRe = regexp.MustCompile("(?m) +$")
 
-var lineTpl = loadSparseTemplate("line", `
-{{.Line}}
+//var lineTpl = tplutil.SparseTemplate("line", `
+//{{.Line}}
 
-{{if .Comments}}
-	{{"\n"}}
-	{{.Comments}}
-{{end}}
-`)
+//{{if .Comments}}
+//    {{"\n"}}
+//    {{.Comments}}
+//{{end}}
+//`)
 
-func (l Line) String() string {
-	return lineTpl.Execute(l)
-}
+//func (l Line) String() string {
+//    result, _ := lineTpl.Execute(l)
+//    return result
+//}

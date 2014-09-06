@@ -5,21 +5,7 @@ type Changeset struct {
 	ToHash     string
 	Path       string
 	Whitespace string
-	Comments   CommentsTree
 	Diffs      []*Diff
-}
-
-var changesetTpl = loadSparseTemplate("changeset", `
-{{if .Comments}}
-	{{.Comments}}
-	{{"\n"}}
-{{end}}
-
-{{range .Diffs}}{{.}}{{end}}
-`)
-
-func (r Changeset) String() string {
-	return changesetTpl.Execute(r)
 }
 
 func (r Changeset) ForEachComment(callback func(*Diff, *Comment, *Comment)) {

@@ -12,23 +12,17 @@ type Segment struct {
 	Lines     []*Line
 }
 
-func (s Segment) String() string {
-	result := ""
-	for _, line := range s.Lines {
-		operation := "?"
-		switch s.Type {
-		case SegmentTypeAdded:
-			operation = "+"
-		case SegmentTypeRemoved:
-			operation = "-"
-		case SegmentTypeContext:
-			operation = " "
-		}
-
-		result += operation + line.String() + "\n"
+func (s Segment) TextPrefix() string {
+	switch s.Type {
+	case SegmentTypeAdded:
+		return "+"
+	case SegmentTypeRemoved:
+		return "-"
+	case SegmentTypeContext:
+		return " "
+	default:
+		return "?"
 	}
-
-	return result
 }
 
 func (s Segment) GetLineNum(l *Line) int64 {

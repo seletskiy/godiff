@@ -11,23 +11,30 @@ import (
 )
 
 type diffTest struct {
-	in  []byte
-	out []byte
-	err []byte
+	name string
+	in   []byte
+	out  []byte
+	err  []byte
 }
 
-func TestParseChangeset(t *testing.T) {
-	for name, testCase := range getParseTests("_test") {
+func TestReadChangeset(t *testing.T) {
+	for _, testCase := range getParseTests("_test") {
 		expected := string(testCase.out)
 
-		review, err := ParseChangeset(bytes.NewBuffer(testCase.in))
+		changeset, err := ReadChangeset(bytes.NewBuffer(testCase.in))
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		actual := review.String()
+		buf := &bytes.Buffer{}
+		err = WriteChangeset(changeset, buf)
+		if err != nil {
+			panic(err)
+		}
+
+		actual := buf.String()
 		if actual != expected {
-			t.Logf("while testing on `%s`\n", name)
+			t.Logf("while testing on `%s`\n", testCase.name)
 			t.Logf("expected:\n%v", expected)
 			t.Logf("actual:\n%v", actual)
 			t.Logf("diff:\n%v", makeDiff(actual, expected))
@@ -65,22 +72,22 @@ func TestNewCommentForLine(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		reviewText, err := ioutil.ReadFile(test.file)
+		changesetText, err := ioutil.ReadFile(test.file)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		review, err := ParseChangeset(bytes.NewBuffer(reviewText))
+		changeset, err := ReadChangeset(bytes.NewBuffer(changesetText))
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if len(review.Diffs) != 1 {
-			t.Fatal("unexpected number of review")
+		if len(changeset.Diffs) != 1 {
+			t.Fatal("unexpected number of changeset")
 			t.FailNow()
 		}
 
-		comment := review.Diffs[0].LineComments[0]
+		comment := changeset.Diffs[0].LineComments[0]
 
 		if comment.Anchor.Line != test.expected.Line {
 			t.Fatal("comment binded to incorrect line")
@@ -100,23 +107,24 @@ func TestNewCommentForLine(t *testing.T) {
 }
 
 func TestDoNotAddNestedCommentsToLineComments(t *testing.T) {
-	reviewText, err := ioutil.ReadFile("_test/with_one_nested_comment.diff")
+	changesetText, err := ioutil.ReadFile("_test/with_one_nested_comment.diff")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	review, err := ParseChangeset(bytes.NewBuffer(reviewText))
+	changeset, err := ReadChangeset(bytes.NewBuffer(changesetText))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(review.Diffs[0].LineComments) != 1 {
+	if len(changeset.Diffs[0].LineComments) != 1 {
 		t.Fatal("expected only one line comment")
 	}
 }
 
-func getParseTests(dir string) map[string]*diffTest {
+func getParseTests(dir string) []*diffTest {
 	diffTests := make(map[string]*diffTest)
+	diffTestsList := make([]*diffTest, 0)
 	reChangesetTest := regexp.MustCompile(`/([^/]+)\.(in|out|err)\.diff$`)
 
 	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
@@ -132,6 +140,8 @@ func getParseTests(dir string) map[string]*diffTest {
 			diffTests[caseName] = &diffTest{}
 		}
 
+		diffTests[caseName].name = caseName
+
 		var target *[]byte
 
 		switch matches[2] {
@@ -145,6 +155,8 @@ func getParseTests(dir string) map[string]*diffTest {
 
 		*target, _ = ioutil.ReadFile(path)
 
+		diffTestsList = append(diffTestsList, diffTests[caseName])
+
 		return nil
 	})
 
@@ -154,7 +166,7 @@ func getParseTests(dir string) map[string]*diffTest {
 		}
 	}
 
-	return diffTests
+	return diffTestsList
 }
 
 func makeDiff(actual, expected string) string {

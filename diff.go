@@ -12,8 +12,10 @@ type Diff struct {
 		Name     string
 		ToString string
 	}
-	Hunks        []*Hunk
-	LineComments []*Comment
+	Hunks []*Hunk
+
+	LineComments CommentsTree
+	DiffComments CommentsTree
 
 	// Lists made only for Stash API compatibility.
 	Attributes struct {
@@ -22,16 +24,20 @@ type Diff struct {
 	}
 }
 
-var diffTpl = loadSparseTemplate(`diff`, `
---- {{.Source.ToString}}{{"\t"}}{{index .Attributes.FromHash 0}}{{"\n"}}
-+++ {{.Destination.ToString}}{{"\t"}}{{index .Attributes.ToHash 0}}{{"\n"}}
-{{range .Hunks}}
-	{{.}}
-{{end}}
-`)
+func (d Diff) GetHashFrom() string {
+	if len(d.Attributes.FromHash) > 0 {
+		return d.Attributes.FromHash[0]
+	} else {
+		return "???"
+	}
+}
 
-func (d Diff) String() string {
-	return diffTpl.Execute(d)
+func (d Diff) GetHashTo() string {
+	if len(d.Attributes.ToHash) > 0 {
+		return d.Attributes.ToHash[0]
+	} else {
+		return "???"
+	}
 }
 
 func (d Diff) ForEachLine(callback func(*Diff, *Hunk, *Segment, *Line)) {

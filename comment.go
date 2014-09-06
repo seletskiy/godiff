@@ -51,37 +51,26 @@ type CommentAnchor struct {
 
 type CommentsTree []*Comment
 
-var commentTpl = loadSparseTemplate("comment", `
-{{if gt .Id 0}}
-	[{{.Id}}@{{.Version}}] | {{.Author.DisplayName}} | {{.UpdatedDate}}
-	{{"\n\n"}}
-{{end}}
-
-{{.Text}}
-{{"\n\n"}}
----
-`)
-
-const replyIndent = "    "
+//const replyIndent = "    "
 
 var begOfLineRe = regexp.MustCompile("(?m)^")
 
-func (c Comment) String() string {
-	comments := commentTpl.Execute(c)
+//func (c Comment) String() string {
+//    comments, _ := commentTpl.Execute(c)
 
-	for _, reply := range c.Comments {
-		comments += reply.AsReply()
-	}
+//    for _, reply := range c.Comments {
+//        comments += reply.AsReply()
+//    }
 
-	return comments
-}
+//    return comments
+//}
 
-func (c Comment) AsReply() string {
-	return begOfLineRe.ReplaceAllString(
-		commentSpacing+c.String(),
-		replyIndent,
-	)
-}
+//func (c Comment) AsReply() string {
+//    return begOfLineRe.ReplaceAllString(
+//        commentSpacing+c.String(),
+//        replyIndent,
+//    )
+//}
 
 var reWhiteSpace = regexp.MustCompile(`\s+`)
 
@@ -106,27 +95,27 @@ func SolidComment(String string) string {
 		ignorePrefix)
 }
 
-const commentSpacing = "\n\n"
-const commentPrefix = "# "
+//const commentSpacing = "\n\n"
+//const commentPrefix = "# "
 
-func (comments CommentsTree) String() string {
-	res := ""
+//func (comments CommentsTree) String() string {
+//    res := ""
 
-	if len(comments) > 0 {
-		res = "---" + commentSpacing
-	}
+//    if len(comments) > 0 {
+//        res = "---" + commentSpacing
+//    }
 
-	for i, comment := range comments {
-		res += comment.String()
-		if i < len(comments)-1 {
-			res += commentSpacing
-		}
-	}
+//    for i, comment := range comments {
+//        res += comment.String()
+//        if i < len(comments)-1 {
+//            res += commentSpacing
+//        }
+//    }
 
-	if len(comments) > 0 {
-		return danglingSpacesRe.ReplaceAllString(
-			begOfLineRe.ReplaceAllString(res, "# "), "")
-	} else {
-		return ""
-	}
-}
+//    if len(comments) > 0 {
+//        return danglingSpacesRe.ReplaceAllString(
+//            begOfLineRe.ReplaceAllString(res, "# "), "")
+//    } else {
+//        return ""
+//    }
+//}
