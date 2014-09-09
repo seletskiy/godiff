@@ -25,6 +25,9 @@ func init() {
 			res, _ := tplutil.ExecuteToString(commentsTpl, input)
 			return res
 		},
+		"writeNote": func(input string) string {
+			return Note(input)
+		},
 		"comment": func(input string) string {
 			return reDanglingSpace.ReplaceAllString(
 				reNewLine.ReplaceAllString(input, `$0# `),

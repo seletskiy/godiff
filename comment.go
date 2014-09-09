@@ -89,7 +89,7 @@ const ignorePrefix = "###"
 var reBeginningOfLine = regexp.MustCompile(`(?m)^`)
 var reIgnorePrefixSpace = regexp.MustCompile("(?m)^" + ignorePrefix + " $")
 
-func SolidComment(String string) string {
+func Note(String string) string {
 	return reIgnorePrefixSpace.ReplaceAllString(
 		reBeginningOfLine.ReplaceAllString(String, ignorePrefix+" "),
 		ignorePrefix)

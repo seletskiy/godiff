@@ -22,6 +22,11 @@ const commentsTplText = `
 
 const changesetTplText = `
 {{range $i, $d := .Diffs}}
+	{{if .Note}}
+		{{writeNote .Note}}
+		{{"\n"}}
+	{{end}}
+
 	{{if .DiffComments}}
 		{{"---" | comment}}
 		{{"\n"}}

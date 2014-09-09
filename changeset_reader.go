@@ -89,6 +89,10 @@ func ReadChangeset(r io.Reader) (Changeset, error) {
 			break
 		}
 
+		if reIgnoredLine.MatchString(line) {
+			continue
+		}
+
 		current.switchState(line)
 		current.createNodes(line)
 		current.locateNodes(line)

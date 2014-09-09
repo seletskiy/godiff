@@ -17,6 +17,8 @@ type Diff struct {
 	LineComments CommentsTree
 	DiffComments CommentsTree
 
+	Note string
+
 	// Lists made only for Stash API compatibility.
 	Attributes struct {
 		FromHash []string
