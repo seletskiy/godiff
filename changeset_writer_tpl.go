@@ -35,10 +35,24 @@ const changesetTplText = `
 	{{end}}
 
 	{{if .Hunks}}
-		--- {{.Source.ToString}}{{"\t"}}{{.GetHashFrom}}
+		---{{" "}}
+		{{if .Source.ToString}}
+			{{.Source.ToString}}
+		{{else}}
+			/dev/null
+		{{end}}
+		{{"\t"}}
+		{{.GetHashFrom}}
 		{{"\n"}}
 
-		+++ {{.Destination.ToString}}{{"\t"}}{{.GetHashTo}}
+		+++{{" "}}
+		{{if .Destination.ToString}}
+			{{.Destination.ToString}}
+		{{else}}
+			/dev/null
+		{{end}}
+		{{"\t"}}
+		{{.GetHashTo}}
 		{{"\n"}}
 
 		{{range .Hunks}}

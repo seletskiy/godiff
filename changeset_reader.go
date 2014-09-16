@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	stateStartOfFile       = "stateStartOfFile"
+	stateStartOfDiff       = "stateStartOfDiff"
 	stateDiffHeader        = "stateDiffHeader"
 	stateHunkHeader        = "stateHunkHeader"
 	stateHunkBody          = "stateHunkBody"
@@ -81,7 +81,7 @@ func ReadChangeset(r io.Reader) (Changeset, error) {
 	buffer := bufio.NewReader(r)
 
 	current := parser{}
-	current.state = stateStartOfFile
+	current.state = stateStartOfDiff
 
 	for {
 		line, err := buffer.ReadString('\n')
@@ -108,8 +108,9 @@ func ReadChangeset(r io.Reader) (Changeset, error) {
 
 func (current *parser) switchState(line string) error {
 	inComment := false
+
 	switch current.state {
-	case stateStartOfFile:
+	case stateStartOfDiff:
 		switch {
 		case reDiffHeader.MatchString(line):
 			current.state = stateDiffHeader
@@ -128,7 +129,7 @@ func (current *parser) switchState(line string) error {
 		case reCommentText.MatchString(line):
 			inComment = true
 		case reEmptyLine.MatchString(line):
-			current.state = stateStartOfFile
+			current.state = stateStartOfDiff
 		}
 	case stateHunkHeader:
 		current.state = stateHunkBody
@@ -149,8 +150,11 @@ func (current *parser) switchState(line string) error {
 		case reCommentText.MatchString(line):
 			inComment = true
 		case reEmptyLine.MatchString(line):
-			current.state = stateStartOfFile
+			current.state = stateStartOfDiff
 			current.diff = nil
+			current.hunk = nil
+			current.segment = nil
+			current.line = nil
 		}
 	}
 
@@ -158,7 +162,7 @@ func (current *parser) switchState(line string) error {
 		current.comment = nil
 	} else {
 		switch current.state {
-		case stateStartOfFile:
+		case stateStartOfDiff:
 			fallthrough
 		case stateDiffComment, stateDiffCommentDelim, stateDiffCommentHeader:
 			switch {
@@ -183,7 +187,8 @@ func (current *parser) switchState(line string) error {
 		}
 	}
 
-	//log.Printf("%#v %#v", line, current.state)
+	// Uncomment for debug state switching
+	//fmt.Printf("%20s : %#v\n", current.state, line)
 
 	return nil
 }
