@@ -10,12 +10,9 @@ const commentsTplText = `
 		{{"\n\n"}}
 	{{end}}
 
-	{{.Text}}
+	{{.Text | trimWhitespace}}
 
 	{{"\n\n---"}}
-
-	{{if not (last $i $)}}
-	{{end}}
 
 	{{writeComments .Comments | indent}}
 {{end}}`

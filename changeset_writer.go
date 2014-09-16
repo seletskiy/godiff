@@ -3,6 +3,7 @@ package godiff
 import (
 	"io"
 	"regexp"
+	"strings"
 	"text/template"
 
 	"github.com/seletskiy/tplutil"
@@ -28,10 +29,15 @@ func init() {
 		"writeNote": func(input string) string {
 			return Note(input)
 		},
+		"trimWhitespace": func(input string) string {
+			return strings.TrimSpace(input)
+		},
 		"comment": func(input string) string {
+			//log.Printf("%#v", input)
 			return reDanglingSpace.ReplaceAllString(
 				reNewLine.ReplaceAllString(input, `$0# `),
-				``)
+				``,
+			)
 		},
 	}
 

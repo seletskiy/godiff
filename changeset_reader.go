@@ -3,6 +3,7 @@ package godiff
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"regexp"
 	"strconv"
@@ -52,7 +53,7 @@ var (
 		`^#\s+\[(\d+)@(\d+)\]\s+\|([^|]+)\|(.*)`)
 
 	reCommentText = regexp.MustCompile(
-		`^#\s*(.*)`)
+		`^#(\s*)(.*)\s*`)
 
 	reIndent = regexp.MustCompile(
 		`^#(\s+)`)
@@ -372,7 +373,14 @@ func (current *parser) parseCommentHeader(line string) error {
 
 func (current *parser) parseComment(line string) error {
 	matches := reCommentText.FindStringSubmatch(line)
-	current.comment.Text += "\n" + strings.Trim(matches[1], " \t")
+	if len(matches[1]) < current.comment.Indent {
+		return errors.New(fmt.Sprintf(
+			"unexpected indent, should be at least: %d",
+			current.comment.Indent))
+	}
+
+	indentedLine := matches[1][current.comment.Indent:] + matches[2]
+	current.comment.Text += "\n" + indentedLine
 
 	return nil
 }
