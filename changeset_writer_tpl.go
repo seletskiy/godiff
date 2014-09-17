@@ -24,10 +24,10 @@ const changesetTplText = `
 		{{"\n"}}
 	{{end}}
 
-	{{if .DiffComments}}
+	{{if .FileComments}}
 		{{"---" | comment}}
 		{{"\n"}}
-		{{writeComments .DiffComments | comment}}
+		{{writeComments .FileComments | comment}}
 		{{"\n"}}
 	{{end}}
 

@@ -271,7 +271,7 @@ func (current *parser) locateComment(line string) error {
 			current.line.Comments = append(current.line.Comments,
 				current.comment)
 		} else {
-			current.diff.DiffComments = append(current.diff.DiffComments,
+			current.diff.FileComments = append(current.diff.FileComments,
 				current.comment)
 		}
 	}

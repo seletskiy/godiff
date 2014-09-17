@@ -14,12 +14,13 @@ type Diff struct {
 	}
 	Hunks []*Hunk
 
+	FileComments CommentsTree
 	LineComments CommentsTree
-	DiffComments CommentsTree
 
 	Note string
 
 	// Lists made only for Stash API compatibility.
+	// TODO: move it to `ash`.
 	Attributes struct {
 		FromHash []string
 		ToHash   []string

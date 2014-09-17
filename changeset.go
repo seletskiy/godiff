@@ -12,7 +12,7 @@ func (r Changeset) ForEachComment(callback func(*Diff, *Comment, *Comment)) {
 	for _, diff := range r.Diffs {
 		stack := make([]*Comment, 0)
 		parents := make(map[*Comment]*Comment)
-		stack = append(stack, diff.DiffComments...)
+		stack = append(stack, diff.FileComments...)
 		stack = append(stack, diff.LineComments...)
 		pos := 0
 

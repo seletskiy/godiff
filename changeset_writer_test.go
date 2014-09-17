@@ -10,7 +10,7 @@ func TestWillOmitDanglingWhitespaceOnRender(t *testing.T) {
 	changeset := Changeset{
 		Diffs: []*Diff{
 			{
-				DiffComments: CommentsTree{
+				FileComments: CommentsTree{
 					{
 						Text: "\n\nevery dangling whitespace    \n\n" +
 							"   should be removed\n\n\n",
