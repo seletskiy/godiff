@@ -342,10 +342,10 @@ func (current *parser) parseDiffHeader(line string) error {
 
 func (current *parser) parseHunkHeader(line string) error {
 	matches := reHunk.FindStringSubmatch(line)
-	current.hunk.SourceLine, _ = strconv.ParseInt(matches[1], 10, 16)
-	current.hunk.SourceSpan, _ = strconv.ParseInt(matches[2], 10, 16)
-	current.hunk.DestinationLine, _ = strconv.ParseInt(matches[3], 10, 16)
-	current.hunk.DestinationSpan, _ = strconv.ParseInt(matches[4], 10, 16)
+	current.hunk.SourceLine, _ = strconv.ParseInt(matches[1], 10, 64)
+	current.hunk.SourceSpan, _ = strconv.ParseInt(matches[2], 10, 64)
+	current.hunk.DestinationLine, _ = strconv.ParseInt(matches[3], 10, 64)
+	current.hunk.DestinationSpan, _ = strconv.ParseInt(matches[4], 10, 64)
 	current.diff.Hunks = append(current.diff.Hunks, current.hunk)
 
 	return nil
@@ -359,13 +359,13 @@ func (current *parser) parseHunkBody(line string) error {
 func (current *parser) parseCommentHeader(line string) error {
 	matches := reCommentHeader.FindStringSubmatch(line)
 	current.comment.Author.DisplayName = strings.TrimSpace(matches[3])
-	current.comment.Id, _ = strconv.ParseInt(matches[1], 10, 16)
+	current.comment.Id, _ = strconv.ParseInt(matches[1], 10, 64)
 	updatedDate, _ := time.ParseInLocation(time.ANSIC,
 		strings.TrimSpace(matches[4]),
 		time.Local)
 	current.comment.UpdatedDate = UnixTimestamp(updatedDate.Unix() * 1000)
 
-	version, _ := strconv.ParseInt(matches[2], 10, 16)
+	version, _ := strconv.ParseInt(matches[2], 10, 64)
 	current.comment.Version = int(version)
 
 	return nil
