@@ -2,7 +2,6 @@ package godiff
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -66,16 +65,26 @@ var (
 )
 
 type parser struct {
-	state     string
-	changeset Changeset
-	diff      *Diff
-	hunk      *Hunk
-	segment   *Segment
-	comment   *Comment
-	line      *Line
+	state      string
+	changeset  Changeset
+	diff       *Diff
+	hunk       *Hunk
+	segment    *Segment
+	comment    *Comment
+	line       *Line
+	lineNumber int
 
 	segmentType  string
 	commentsList []*Comment
+}
+
+type Error struct {
+	LineNumber int
+	Message    string
+}
+
+func (err Error) Error() string {
+	return fmt.Sprintf("line %d: %s", err.LineNumber, err.Message)
 }
 
 func ReadChangeset(r io.Reader) (Changeset, error) {
@@ -85,6 +94,8 @@ func ReadChangeset(r io.Reader) (Changeset, error) {
 	current.state = stateStartOfDiff
 
 	for {
+		current.lineNumber++
+
 		line, err := buffer.ReadString('\n')
 		if err != nil {
 			break
@@ -94,10 +105,25 @@ func ReadChangeset(r io.Reader) (Changeset, error) {
 			continue
 		}
 
-		current.switchState(line)
-		current.createNodes(line)
-		current.locateNodes(line)
-		current.parseLine(line)
+		err = current.switchState(line)
+		if err != nil {
+			return current.changeset, err
+		}
+
+		err = current.createNodes(line)
+		if err != nil {
+			return current.changeset, err
+		}
+
+		err = current.locateNodes(line)
+		if err != nil {
+			return current.changeset, err
+		}
+
+		err = current.parseLine(line)
+		if err != nil {
+			return current.changeset, err
+		}
 	}
 
 	for _, comment := range current.commentsList {
@@ -117,6 +143,13 @@ func (current *parser) switchState(line string) error {
 			current.state = stateDiffHeader
 		case reCommentText.MatchString(line):
 			inComment = true
+		case reEmptyLine.MatchString(line):
+			// body intentionally left empty
+		default:
+			return Error{
+				current.lineNumber,
+				"expected diff header, but none found",
+			}
 		}
 	case stateDiffHeader:
 		switch {
@@ -335,7 +368,10 @@ func (current *parser) parseDiffHeader(line string) error {
 		current.changeset.ToHash = matches[2]
 		current.diff.Attributes.ToHash = []string{matches[2]}
 	default:
-		return errors.New("expected diff header, but not found")
+		return Error{
+			current.lineNumber,
+			"expected diff header, but not found",
+		}
 	}
 	return nil
 }
@@ -374,9 +410,13 @@ func (current *parser) parseCommentHeader(line string) error {
 func (current *parser) parseComment(line string) error {
 	matches := reCommentText.FindStringSubmatch(line)
 	if len(matches[1]) < current.comment.Indent {
-		return errors.New(fmt.Sprintf(
-			"unexpected indent, should be at least: %d",
-			current.comment.Indent))
+		return Error{
+			LineNumber: current.lineNumber,
+			Message: fmt.Sprintf(
+				"unexpected indent, should be at least: %d",
+				current.comment.Indent,
+			),
+		}
 	}
 
 	indentedLine := matches[1][current.comment.Indent:] + matches[2]

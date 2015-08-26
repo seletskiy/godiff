@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -23,7 +24,12 @@ func TestReadChangeset(t *testing.T) {
 
 		changeset, err := ReadChangeset(bytes.NewBuffer(testCase.in))
 		if err != nil {
-			t.Fatal(err)
+			if err.Error() != strings.TrimSpace(string(testCase.err)) {
+				t.Logf("while testing on `%s`\n", testCase.name)
+				t.Fatal(err)
+			} else {
+				continue
+			}
 		}
 
 		buf := &bytes.Buffer{}
