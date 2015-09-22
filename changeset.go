@@ -33,8 +33,15 @@ func (r Changeset) ForEachComment(callback func(*Diff, *Comment, *Comment)) {
 	}
 }
 
-func (r Changeset) ForEachLine(callback func(*Diff, *Hunk, *Segment, *Line)) {
+func (r Changeset) ForEachLine(
+	callback func(*Diff, *Hunk, *Segment, *Line) error,
+) error {
 	for _, diff := range r.Diffs {
-		diff.ForEachLine(callback)
+		err := diff.ForEachLine(callback)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }

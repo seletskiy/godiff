@@ -43,12 +43,19 @@ func (d Diff) GetHashTo() string {
 	}
 }
 
-func (d Diff) ForEachLine(callback func(*Diff, *Hunk, *Segment, *Line)) {
+func (d Diff) ForEachLine(
+	callback func(*Diff, *Hunk, *Segment, *Line) error,
+) error {
 	for _, hunk := range d.Hunks {
 		for _, segment := range hunk.Segments {
 			for _, line := range segment.Lines {
-				callback(&d, hunk, segment, line)
+				err := callback(&d, hunk, segment, line)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
+
+	return nil
 }
