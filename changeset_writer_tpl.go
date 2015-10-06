@@ -53,7 +53,7 @@ const changesetTplText = `
 		{{"\n"}}
 
 		{{range .Hunks}}
-			@@ -{{.SourceLine}},{{.SourceSpan}} +{{.DestinationLine}}{{if ne .DestinationSpan 0}},{{.DestinationSpan}}{{end}} @@
+			@@ -{{.SourceLine}}{{if ne .SourceSpan 0}},{{.SourceSpan}}{{end}} +{{.DestinationLine}}{{if ne .DestinationSpan 0}},{{.DestinationSpan}}{{end}} @@
 			{{"\n"}}
 
 			{{range .Segments}}

@@ -1,0 +1,6 @@
+--- a/Heaverfile	
++++ b/Heaverfile	
+@@ -1 +1,2 @@
+-PACKAGE package_foo
++PACKAGE package_bar
++PACKAGE package_quz
