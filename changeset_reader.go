@@ -27,6 +27,9 @@ var (
 	reDiffHeader = regexp.MustCompile(
 		`^--- |^\+\+\+ `)
 
+	reGitDiffHeader = regexp.MustCompile(
+		`^diff |^index `)
+
 	reFromFile = regexp.MustCompile(
 		`^--- (\S+)\s+(.*)`)
 
@@ -139,7 +142,7 @@ func (current *parser) switchState(line string) error {
 	switch current.state {
 	case stateStartOfDiff:
 		switch {
-		case reDiffHeader.MatchString(line):
+		case reDiffHeader.MatchString(line), reGitDiffHeader.MatchString(line):
 			current.state = stateDiffHeader
 		case reCommentText.MatchString(line):
 			inComment = true
