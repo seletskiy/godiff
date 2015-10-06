@@ -1,0 +1,8 @@
+diff --git a/Heaverfile b/Heaverfile
+index c8674f4..8a3e141 100644
+--- a/Heaverfile
++++ b/Heaverfile
+@@ -1 +1,2 @@
+-PACKAGE package_foo
++PACKAGE package_bar
++PACKAGE package_quz

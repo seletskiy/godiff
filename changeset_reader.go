@@ -27,14 +27,17 @@ var (
 	reDiffHeader = regexp.MustCompile(
 		`^--- |^\+\+\+ `)
 
+	reGitDiffHeader = regexp.MustCompile(
+		`^diff |^index `)
+
 	reFromFile = regexp.MustCompile(
-		`^--- (\S+)\s+(.*)`)
+		`^--- (\S+)(\s+(.*))`)
 
 	reToFile = regexp.MustCompile(
-		`^\+\+\+ (\S+)\s+(.*)`)
+		`^\+\+\+ (\S+)(\s+(.*))`)
 
 	reHunk = regexp.MustCompile(
-		`^@@ -(\d+),(\d+) \+(\d+)(,(\d+))? @@`)
+		`^@@ -(\d+)(,(\d+))? \+(\d+)(,(\d+))? @@`)
 
 	reSegmentContext = regexp.MustCompile(
 		`^ `)
@@ -139,7 +142,7 @@ func (current *parser) switchState(line string) error {
 	switch current.state {
 	case stateStartOfDiff:
 		switch {
-		case reDiffHeader.MatchString(line):
+		case reDiffHeader.MatchString(line), reGitDiffHeader.MatchString(line):
 			current.state = stateDiffHeader
 		case reCommentText.MatchString(line):
 			inComment = true
@@ -360,13 +363,13 @@ func (current *parser) parseDiffHeader(line string) error {
 		matches := reFromFile.FindStringSubmatch(line)
 		current.changeset.Path = matches[1]
 		current.diff.Source.ToString = matches[1]
-		current.changeset.FromHash = matches[2]
-		current.diff.Attributes.FromHash = []string{matches[2]}
+		current.changeset.FromHash = matches[3]
+		current.diff.Attributes.FromHash = []string{matches[3]}
 	case reToFile.MatchString(line):
 		matches := reToFile.FindStringSubmatch(line)
 		current.diff.Destination.ToString = matches[1]
-		current.changeset.ToHash = matches[2]
-		current.diff.Attributes.ToHash = []string{matches[2]}
+		current.changeset.ToHash = matches[3]
+		current.diff.Attributes.ToHash = []string{matches[3]}
 	default:
 		return Error{
 			current.lineNumber,
@@ -379,9 +382,9 @@ func (current *parser) parseDiffHeader(line string) error {
 func (current *parser) parseHunkHeader(line string) error {
 	matches := reHunk.FindStringSubmatch(line)
 	current.hunk.SourceLine, _ = strconv.ParseInt(matches[1], 10, 64)
-	current.hunk.SourceSpan, _ = strconv.ParseInt(matches[2], 10, 64)
-	current.hunk.DestinationLine, _ = strconv.ParseInt(matches[3], 10, 64)
-	current.hunk.DestinationSpan, _ = strconv.ParseInt(matches[5], 10, 64)
+	current.hunk.SourceSpan, _ = strconv.ParseInt(matches[3], 10, 64)
+	current.hunk.DestinationLine, _ = strconv.ParseInt(matches[4], 10, 64)
+	current.hunk.DestinationSpan, _ = strconv.ParseInt(matches[6], 10, 64)
 	current.diff.Hunks = append(current.diff.Hunks, current.hunk)
 
 	return nil
