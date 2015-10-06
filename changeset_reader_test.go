@@ -41,8 +41,8 @@ func TestReadChangeset(t *testing.T) {
 		actual := buf.String()
 		if actual != expected {
 			t.Logf("while testing on `%s`\n", testCase.name)
-			t.Logf("expected:\n%v", expected)
-			t.Logf("actual:\n%v", actual)
+			t.Logf("expected:\n%#v", expected)
+			t.Logf("actual:\n%#v", actual)
 			t.Logf("diff:\n%v", makeDiff(actual, expected))
 			t.FailNow()
 		}

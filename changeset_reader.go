@@ -34,7 +34,7 @@ var (
 		`^\+\+\+ (\S+)\s+(.*)`)
 
 	reHunk = regexp.MustCompile(
-		`^@@ -(\d+),(\d+) \+(\d+),(\d+) @@`)
+		`^@@ -(\d+),(\d+) \+(\d+)(,(\d+))? @@`)
 
 	reSegmentContext = regexp.MustCompile(
 		`^ `)
@@ -381,7 +381,7 @@ func (current *parser) parseHunkHeader(line string) error {
 	current.hunk.SourceLine, _ = strconv.ParseInt(matches[1], 10, 64)
 	current.hunk.SourceSpan, _ = strconv.ParseInt(matches[2], 10, 64)
 	current.hunk.DestinationLine, _ = strconv.ParseInt(matches[3], 10, 64)
-	current.hunk.DestinationSpan, _ = strconv.ParseInt(matches[4], 10, 64)
+	current.hunk.DestinationSpan, _ = strconv.ParseInt(matches[5], 10, 64)
 	current.diff.Hunks = append(current.diff.Hunks, current.hunk)
 
 	return nil
