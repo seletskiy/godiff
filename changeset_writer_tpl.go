@@ -39,7 +39,7 @@ const changesetTplText = `
 			/dev/null
 		{{end}}
 		{{"\t"}}
-		{{.GetHashFrom}}
+		{{$.FromHash}}
 		{{"\n"}}
 
 		+++{{" "}}
@@ -49,7 +49,7 @@ const changesetTplText = `
 			/dev/null
 		{{end}}
 		{{"\t"}}
-		{{.GetHashTo}}
+		{{$.ToHash}}
 		{{"\n"}}
 
 		{{range .Hunks}}
